@@ -1,0 +1,31 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+    <meta name="viewport" content="width=device-width" />
+    <title>@ViewBag.Title</title>
+
+    <!-- Bootstrap CSS -->
+    <link href="~/lib/bootstrap/dist/css/bootstrap.min.css" rel="stylesheet" />
+
+    <!-- Custom CSS -->
+    <link href="~/css/site.css" rel="stylesheet" />
+    <link href="~/css/custome.css" rel="stylesheet" /> <!-- Add this line for custom styles -->
+</head>
+<body>
+
+    <div id="container-fluid" class="container-fluid">
+            @RenderBody()
+        </div>
+ 
+    <!-- jQuery -->
+    <script src="~/lib/jquery/dist/jquery.min.js"></script>
+
+    <!-- Bootstrap JS -->
+    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+
+    <!-- Custom JS -->
+    <script src="~/js/site.js" asp-append-version="true"></script>
+    <script src="~/js/custome.js" asp-append-version="true"></script> <!-- Add this line for custom scripts -->
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

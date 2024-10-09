@@ -1,0 +1,86 @@
+﻿@page
+@model RegisterModel
+@{
+    Layout = "LoginLayout";
+}
+
+<style>
+
+    #genderDropDown{
+        margin-left: -1px;
+        border-top-left-radius: 0;
+        border-bottom-left-radius: 0;
+        /* padding: 1rem 3rem; */
+        padding: 9px 3rem;
+        font-size: 1rem;
+        background-color: var(--gray);
+        border-radius: .5rem;
+        border: 0.125rem solid var(--white);
+        outline: none;
+    }
+
+</style>
+
+<div class="row">
+    <div class="col-md-4 offset-md-7 col-sm-12">
+        <div class="form-wrapper align-items-center">
+            <div class="form sign-in mt-4" style="block-size:min-content;">
+                <form id="registerForm" method="post" asp-route-returnUrl="@Model.ReturnUrl">
+                    <h6>Create a new account.</h6>
+                    <hr />
+                    <div asp-validation-summary="ModelOnly" class="text-danger" role="alert"></div>
+                    <div class="input-group">
+                        <i class='bx bxs-user'></i>
+                        <input asp-for="Input.Name" class="form-control" autocomplete="new-name" aria-required="true" placeholder="Name" />
+                    </div>
+                    <div class="input-group">
+                        <select id="genderDropDown" asp-for="Input.Gender" class="form-control" aria-required="true">
+                            <option value="">Select Gender</option>
+                            <option value="Male">Male</option>
+                            <option value="Female">Female</option>
+                        </select>   
+                    </div>
+                    <div class="input-group">
+                        <i class='bx bxs-phone'></i>
+                        <input asp-for="Input.Mobile" class="form-control" autocomplete="new-mobile" aria-required="true" placeholder="Mobile" />
+                    </div>
+                    <div class="input-group">
+                        <i class='bx bx-mail-send'></i>
+                        <input asp-for="Input.Email" class="form-control" autocomplete="username" aria-required="true" placeholder="name@example.com" />
+                    </div>
+                    <div class="input-group">
+                        <i class='bx bxs-lock-alt'></i>
+                        <input asp-for="Input.Password" class="form-control" autocomplete="new-password" aria-required="true" placeholder="password" />
+                    </div>
+                    <div class="input-group">
+                        <i class='bx bxs-lock-alt'></i>
+                        <input asp-for="Input.ConfirmPassword" class="form-control" autocomplete="new-password" aria-required="true" placeholder="confirm password" />
+                    </div>
+                    <button id="registerSubmit" type="submit" class="w-100 btn btn-sm btn-outline-success">Register</button>
+                    
+                    <a asp-page="./Login" asp-route-returnUrl="@Model.ReturnUrl" style="font-size:small;" class="mt-2">Already Account ? Login here </a>
+
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row content-row">
+    <!-- SIGN IN CONTENT -->
+    <div class="col  flex-col">
+        <div class="text sign-in">
+            <h2 class="mt-4">
+                Join with us
+                <br /> 
+                <br />
+                Create an <br />account
+            </h2>
+
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

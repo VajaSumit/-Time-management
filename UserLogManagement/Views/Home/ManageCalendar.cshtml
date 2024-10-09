@@ -1,0 +1,184 @@
+﻿@model UserLogManagement.ViewModels.CalendarViewModel
+
+@{
+    ViewData["Title"] = "Manage Calendar";
+    Layout = "~/Views/Shared/_Layout1.cshtml";
+}
+
+<form method="get" asp-action="ManageCalendar">
+    <div class="row d-flex">
+        <div class="col-md-4 d-inline-flex">
+            <select name="month" class="form-control">
+                @for (int i = 1; i <= 12; i++)
+                {
+                    if (i == Model.Month)
+                    {
+                        <option value="@i" selected="selected">@i</option>
+                    }
+                    else
+                    {
+                        <option value="@i">@i</option>
+                    }
+                }
+            </select>
+
+            &nbsp; &nbsp;
+
+            <select name="year" class="form-control">
+                @for (int i = DateTime.Now.Year - 5; i <= DateTime.Now.Year + 5; i++)
+                {
+                    if (i == Model.Year)
+                    {
+                        <option value="@i" selected="selected">@i</option>
+                    }
+                    else
+                    {
+                        <option value="@i">@i</option>
+                    }
+                }
+            </select>
+
+            &nbsp; &nbsp;
+
+            <button type="submit" class="btn btn-outline-primary">
+                <i class="fas fa-search"></i>
+            </button>
+        </div>
+    </div>
+</form>
+
+<div class="row mt-5">
+    <div class="col-md-9 col-sm-12 col-lg-9">
+        <div class="calendar">
+            <!-- Day names header -->
+            @{
+                var dayNames = new List<string> { "Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday" };
+            }
+
+            @foreach (var dayName in dayNames)
+            {
+                <div class="calendar-day-name bg-primary" style="color:white;font-weight:bold;border-radius:25%;">@dayName</div>
+            }
+
+            @{
+                // Calculate the first day of the month and offset days
+                var firstDayOfMonth = new DateTime(Model.Year, Model.Month, 1);
+                var dayOfWeek = (int)firstDayOfMonth.DayOfWeek;
+
+                // Add empty cells for days before the first day of the month
+                for (int i = 0; i < dayOfWeek; i++)
+                {
+                    <div class="calendar-day"></div>
+                }
+
+                var daysInMonth = DateTime.DaysInMonth(Model.Year, Model.Month);
+
+                // Render the calendar days
+                for (int day = 1; day <= daysInMonth; day++)
+                {
+                    var date = new DateTime(Model.Year, Model.Month, day);
+                    var userLog = Model.Days.FirstOrDefault(d => d.Date.Date == date.Date);
+                    var dayColor = userLog?.Color ?? "white";
+                    var fontColor = dayColor == "white" ? "black" : "white";
+
+                    <div class="calendar-day" style="background-color:@dayColor;color:@fontColor; cursor:pointer;"
+                         data-date="@date.ToString("yyyy-MM-dd")">
+                        <div>@day</div>
+                    </div>
+                }
+            }
+        </div>
+    </div>
+    <div class="col-md-3 col-sm-12 col-lg-3" id="details" style="background-color:white;border:solid;border-color:black;border-radius:10%;">
+        <h6 class="text-center mt-4 text-decoration-underline" style="font-weight:bold;" >Details</h6>
+        <div id="details-content" class="p-3 text-center">
+            <p>Select a day to view details.</p>
+        </div>
+    </div>
+</div>
+
+<div class="row" style="margin-top:60px;margin-left:5px;">
+    <div class="d-flex d-block">
+        <div style="height:15px;width:15px;background-color:green;border-radius:50%;display:inline-block;"></div>
+        Present
+
+        &nbsp;&nbsp;
+
+        <div style="height:15px;width:15px;background-color:red;border-radius:50%;display:inline-block;"></div>
+        Absent
+
+        &nbsp;&nbsp;
+
+        <div style="height:15px;width:15px;background-color:orange;border-radius:50%;display:inline-block;"></div>
+        Halfday
+
+        &nbsp;&nbsp;
+
+        <div style="height:15px;width:15px;background-color:gray;border-radius:50%;display:inline-block;"></div>
+        Holiday
+
+        &nbsp;&nbsp;
+
+        <div style="height:15px;width:15px;background-color:skyblue;border-radius:50%;display:inline-block;"></div>
+        Today Date
+
+        &nbsp;&nbsp;
+
+        <div style="height:15px;width:15px;background-color:white;border-color:black;border:solid;border-width:1px;border-radius:50%;display:inline-block;"></div>
+        Blank
+    </div>
+</div>
+
+<style>
+    .calendar {
+        display: grid;
+        grid-template-columns: repeat(7, 1fr);
+        gap: 7px;
+    }
+
+    .calendar-day-name {
+        text-align: center;
+        font-weight: bold;
+        padding: 5px;
+        border: 1px solid #ccc;
+        background-color: #f0f0f0;
+        border-radius: 4px;x`
+    }
+
+    .calendar-day {
+        border: 1px solid #ccc;
+        padding: 5px;
+        text-align: center;
+        border-radius: 35%;
+    }
+</style>
+
+@section Scripts {
+    <script>
+        $(document).ready(function () {
+            $(".calendar-day").click(function () {
+                var date = $(this).data("date");
+                $.ajax({
+                    url: '@Url.Action("GetDayDetails", "Home")',
+                    type: 'GET',
+                    data: { date: date },
+                    success: function (response) {
+                        if (response.success) {
+                            $("#details-content").html(
+                                 '<p><strong>Date:</strong> ' + response.date + '</p>' +
+                                '<p><strong>Punch In:</strong> ' + response.punchIn + '</p>' +
+                                '<p><strong>Punch Out:</strong> ' + response.punchOut + '</p>' +
+                                '<p><strong>Total Hours:</strong> ' + response.totalHours + '</p>' 
+                            );
+                        } else {
+                            $("#details-content").html('<p>' + response.message + '</p>');
+                        }
+                    },
+                    error: function () {
+                        $("#details-content").html('<p>Error fetching data.</p>');
+                    }
+                });
+            });
+        });
+    </script>
+}

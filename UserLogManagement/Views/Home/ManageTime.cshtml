@@ -1,0 +1,540 @@
+﻿@{
+    ViewData["Title"] = "ManageTime";
+    Layout = "~/Views/Shared/_Layout1.cshtml";
+}
+
+
+<div class="col-md-4 offset-md-4 col-sm-12" style="margin-top:100px;">
+    <div class="card text-center box-shadow shadow-lg">
+        <h6 class="card-header" style="background-color:black;color:white;">
+            Manage The Time
+        </h6>
+        <div class="card-body mt-3">
+            <h4 class="card-text">
+                Timer: <span id="timer">00:00:00</span>
+            </h4>
+            <br />
+            <h6 class="card-text">
+                Break : <span id="breaktimer">00:00:00</span>
+            </h6>
+            <div class="d-flex mt-4 justify-content-center">
+                <button id="punchInBtn" class="btn btn-sm btn-primary" style="display:none">Punch In</button>
+                <button id="btnbreak" class="btn btn-sm btn-warning" style="display:none">Take Break</button>&nbsp;&nbsp;&nbsp;
+                <button id="btncontinue" class="btn btn-sm btn-success" style="display:none">Continue</button>&nbsp;&nbsp;&nbsp;
+                <button id="btnpunchout" class="btn btn-sm btn-danger" style="display:none">Punch Out</button>
+                <button id="btncontinueworking" class="btn btn-sm btn-info" style="display:none">Continue Working Hours</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        var timerInterval, breakInterval;
+        var seconds = 0, breakSeconds = 0;
+        var paused = false, breakPaused = false;
+
+        function updateTimer() {
+            var hrs = Math.floor(seconds / 3600).toString().padStart(2, '0');
+            var mins = Math.floor((seconds % 3600) / 60).toString().padStart(2, '0');
+            var secs = (seconds % 60).toString().padStart(2, '0');
+            document.getElementById('timer').innerText = `${hrs}:${mins}:${secs}`;
+        }
+
+        function updateBreakTimer() {
+            var hrs = Math.floor(breakSeconds / 3600).toString().padStart(2, '0');
+            var mins = Math.floor((breakSeconds % 3600) / 60).toString().padStart(2, '0');
+            var secs = (breakSeconds % 60).toString().padStart(2, '0');
+            document.getElementById('breaktimer').innerText = `${hrs}:${mins}:${secs}`;
+        }
+
+
+        function startTimer() {
+            if (!timerInterval) {
+                timerInterval = setInterval(function () {
+                    if (!paused) {
+                        seconds++;
+                        updateTimer();
+                    }
+                }, 1000);
+            }
+            paused = false; // Unpause the timer
+        }
+
+
+        function stopTimer() {
+            paused = true;
+        }
+
+        function resetTimer() {
+            clearInterval(timerInterval);
+            timerInterval = null;
+            seconds = 0;
+            updateTimer();
+        }
+
+        function startBreakTimer() {
+            if (!breakInterval) {
+                breakInterval = setInterval(function () {
+                    if (!breakPaused) {
+                        breakSeconds++;
+                        updateBreakTimer();
+                    }
+                }, 1000);
+            }
+            breakPaused = false;
+        }
+
+        function stopBreakTimer() {
+            breakPaused = true;
+        }
+
+        function resetBreakTimer() {
+            clearInterval(breakInterval);
+            breakInterval = null;
+            breakSeconds = 0;
+            updateBreakTimer();
+        }
+
+
+     
+      
+        $(document).ready(function () {
+            $.ajax({
+                method: 'GET',
+                url: '@Url.Action("GetData", "Home")',
+                success: function (response) {
+
+                    debugger
+                    if (response.success) {
+                        var punchInTime = new Date(response.punchInTime);
+                        var punchOutTime = new Date(response.punchOutTime);
+
+                        var currentTime = new Date();
+
+                        if (response.status == "") {
+                            $("#punchInBtn").css("display", "inline-block");
+                        }
+
+
+                        if (response.status == "PunchIn") {
+
+
+                            if (response.breakDiffrent == false) 
+                            {
+
+
+                                if (response.workinghours != null) {
+
+                                    var workingTimeParts = response.workinghours.split(':');
+                                    var workingTimePartsTimeInSeconds = (+workingTimeParts[0] * 60 * 60) + (+workingTimeParts[1] * 60) + (+workingTimeParts[2]);
+
+                                    var timeDiff = Math.floor((currentTime - punchInTime) / 1000);
+                                    seconds = timeDiff+ workingTimePartsTimeInSeconds;
+
+                                }
+                                else {
+                                    var timeDiff = Math.floor((currentTime - punchInTime) / 1000);
+                                    seconds = timeDiff;
+                                }
+
+                                updateTimer();
+                                startTimer();
+
+                                $("#btnbreak").css("display", "inline-block");
+                                $("#btnpunchout").css("display", "inline-block");
+                                $("#punchInBtn").css("display", "none");
+
+                                var breakTimeParts = response.breakDiffrent.split(':');
+                                var breakTimeInSeconds = (+breakTimeParts[0] * 60 * 60) + (+breakTimeParts[1] * 60) + (+breakTimeParts[2]);
+                                breakSeconds = breakTimeInSeconds;
+                                updateBreakTimer();
+                                stopBreakTimer();
+                            }
+                            if (response.breakDiffrent != null) {
+
+                                if (response.workinghours != null) {
+
+                                    var workingTimeParts = response.workinghours.split(':');
+                                    var workingTimePartsTimeInSeconds = (+workingTimeParts[0] * 60 * 60) + (+workingTimeParts[1] * 60) + (+workingTimeParts[2]);
+
+                                    var breakTimeParts = response.breakDiffrent.split(':');
+                                    var breakTimeInSeconds = (+breakTimeParts[0] * 60 * 60) + (+breakTimeParts[1] * 60) + (+breakTimeParts[2]);
+
+                                    var timeDiff1 = Math.floor((currentTime - punchInTime) / 1000);
+
+
+                                    var timeDiff2 = timeDiff1 + workingTimePartsTimeInSeconds;
+
+                                    seconds = timeDiff2 -  breakTimeInSeconds;
+                                    breakSeconds = breakTimeInSeconds;
+
+                                }
+                                else {
+
+                                    var breakTimeParts = response.breakDiffrent.split(':');
+                                    var breakTimeInSeconds = (+breakTimeParts[0] * 60 * 60) + (+breakTimeParts[1] * 60) + (+breakTimeParts[2]);
+
+                                    var timeDiff1 = Math.floor((currentTime - punchInTime) / 1000);
+
+                                    var timeDiff2 = timeDiff1 - breakTimeInSeconds;
+
+                                    seconds = timeDiff2;
+                                    breakSeconds = breakTimeInSeconds;
+                                }
+                                updateTimer();
+                                startTimer();
+
+                                updateBreakTimer();
+                                stopBreakTimer();
+
+                                $("#btnbreak").css("display", "inline-block");
+                                $("#btnpunchout").css("display", "inline-block");
+                                $("#punchInBtn").css("display", "none");
+                            }
+
+
+
+                        }
+
+
+
+                        if (response.status == "Break") {
+
+
+                            if (response.breakStart != null) {
+
+                                var breakStartTime = new Date(response.breakStart);
+
+                                if (response.breakDiffrent == false) {
+
+                                    if (response.workinghours != null) {
+
+                                        var workingTimeParts = response.workinghours.split(':');
+                                        var workingTimePartsTimeInSeconds = (+workingTimeParts[0] * 60 * 60) + (+workingTimeParts[1] * 60) + (+workingTimeParts[2]);
+                                        var timeDiff = Math.floor((breakStartTime - punchInTime) / 1000);
+                                        seconds = timeDiff + workingTimePartsTimeInSeconds;
+                                    }
+                                    else {
+                                        var timeDiff = Math.floor((breakStartTime - punchInTime) / 1000);
+                                        seconds = timeDiff;
+                                    }
+                                    updateTimer();
+                                    stopTimer();
+
+                                    var breaktimeDiff = Math.floor((currentTime - breakStartTime) / 1000);
+                                    breakSeconds = breaktimeDiff;
+                                    updateBreakTimer();
+                                    startBreakTimer();
+
+                                    $("#btncontinue").css("display", "inline-block");
+                                    $("#btnpunchout").css("display", "inline-block");
+                                    $("#btnbreak").css("display", "none");
+                                    $("#punchInBtn").css("display", "none");
+                                }
+                                if (response.breakDiffrent != false) {
+
+                                    var breakTimeParts = response.breakDiffrent.split(':');
+                                    var breakTimeInSeconds = (+breakTimeParts[0] * 60 * 60) + (+breakTimeParts[1] * 60) + (+breakTimeParts[2]);
+
+                                    if (response.workinghours != null) {
+
+                                        var workingTimeParts = response.workinghours.split(':');
+                                        var workingTimePartsTimeInSeconds = (+workingTimeParts[0] * 60 * 60) + (+workingTimeParts[1] * 60) + (+workingTimeParts[2]);
+
+                                        var timeDiff1 = Math.floor((breakStartTime - punchInTime) / 1000);
+
+                                        if (timeDiff1 >= breakTimeInSeconds) {
+                                            var timeDiff2 = timeDiff1 - breakTimeInSeconds;
+                                            console.log(timeDiff2);
+                                            seconds = timeDiff2 + workingTimePartsTimeInSeconds;
+                                        }
+                                        else {
+                                            seconds = timeDiff1 + workingTimePartsTimeInSeconds;
+                                        }
+                                    }
+                                    else {
+                                        var timeDiff1 = Math.floor((breakStartTime - punchInTime) / 1000);
+
+                                        if (timeDiff1 >= breakTimeInSeconds) {
+                                            var timeDiff2 = timeDiff1 - breakTimeInSeconds;
+                                            console.log(timeDiff2);
+                                            seconds = timeDiff2;
+                                        }
+                                        else {
+                                            seconds = timeDiff1;
+                                        }
+                                    }
+                                    
+
+                                   
+
+                                    updateTimer();
+                                    stopTimer();
+
+                                    var breaktimeDiff = Math.floor((currentTime - breakStartTime) / 1000) + breakTimeInSeconds;
+                                    breakSeconds = breaktimeDiff;
+                                    updateBreakTimer();
+                                    startBreakTimer();
+
+                                    $("#btncontinue").css("display", "inline-block");
+                                    $("#btnpunchout").css("display", "inline-block");
+                                    $("#btnbreak").css("display", "none");
+                                    $("#punchInBtn").css("display", "none");
+                                }
+
+                            }
+
+
+
+
+
+                        }
+                        if (response.status == "PunchOut") {
+                            if (response.breakDiffrent == false) {
+
+                                if (response.workinghours != null) {
+
+                                    var workingTimeParts = response.workinghours.split(':');
+                                    var workingTimePartsTimeInSeconds = (+workingTimeParts[0] * 60 * 60) + (+workingTimeParts[1] * 60) + (+workingTimeParts[2]);
+
+                                    let punchOutTime = new Date(response.punchOutTime);
+
+                                    var timeDiff = Math.floor((punchOutTime - punchInTime) / 1000);
+                                    seconds =  workingTimePartsTimeInSeconds;
+                                }
+                                else {
+                                    let punchOutTime = new Date(response.punchOutTime);
+
+                                    var timeDiff = Math.floor((punchOutTime - punchInTime) / 1000);
+                                    seconds = timeDiff;
+                                }
+                               
+
+                                updateTimer();
+                                stopTimer();
+
+
+                                $("#btncontinueworking").css("display", "inline-block");
+
+                                $("#punchInBtn").css("display", "none");
+                                $("#btncontinue").css("display", "none");
+                                $("#btnpunchout").css("display", "none");
+                                $("#btnbreak").css("display", "none");
+
+                            }
+                            if (response.breakDiffrent != false) {
+
+                                if (response.workinghours != null) {
+
+                                    var workingTimeParts = response.workinghours.split(':');
+                                    var workingTimePartsTimeInSeconds = (+workingTimeParts[0] * 60 * 60) + (+workingTimeParts[1] * 60) + (+workingTimeParts[2]);
+
+                                    let punchOutTime = new Date(response.punchOutTime);
+
+                                    var breakTimeParts = response.breakDiffrent.split(':');
+                                    var breakTimeInSeconds = (+breakTimeParts[0] * 60 * 60) + (+breakTimeParts[1] * 60) + (+breakTimeParts[2]);
+
+                                    // var timeDiff1 = Math.floor((punchOutTime - punchInTime) / 1000);
+                                    // var timeDiff2 = timeDiff1 - breakTimeInSeconds;
+
+                                    seconds = workingTimePartsTimeInSeconds;
+                                }
+                                else {
+                                    let punchOutTime = new Date(response.punchOutTime);
+
+                                    var breakTimeParts = response.breakDiffrent.split(':');
+                                    var breakTimeInSeconds = (+breakTimeParts[0] * 60 * 60) + (+breakTimeParts[1] * 60) + (+breakTimeParts[2]);
+
+                                    var timeDiff1 = Math.floor((punchOutTime - punchInTime) / 1000);
+                                    var timeDiff2 = timeDiff1 - breakTimeInSeconds;
+                                    console.log(timeDiff2);
+                                    seconds = timeDiff2;
+                                }
+
+                        
+
+                                stopTimer();
+                                updateTimer();
+
+                                breakSeconds = breakTimeInSeconds;
+                                updateBreakTimer();
+                                stopBreakTimer();
+
+                                $("#btncontinueworking").css("display", "inline-block");
+
+                                $("#punchInBtn").css("display", "none");
+                                $("#btncontinue").css("display", "none");
+                                $("#btnpunchout").css("display", "none");
+                                $("#btnbreak").css("display", "none");
+                            }
+                        }
+
+
+
+                    }
+                    else {
+
+                        $("#punchInBtn").css("display", "inline-block");
+                    }
+                },
+                error: function () {
+                    alert('An error occurred while checking punch-in status.');
+                }
+            });
+        });
+
+        document.getElementById('punchInBtn').addEventListener('click', function () {
+            resetTimer();
+            startTimer();
+            var currentTime = document.getElementById('timer').innerText;
+
+            $.ajax({
+                method: 'POST',
+                url: '@Url.Action("PunchIn", "Home")',
+                data: {},
+                success: function (response) {
+                    if (response.success) {
+                        // alert('Punch In time recorded successfully.');
+
+                        $("#btnbreak").css("display", "inline-block");
+                        $("#btnpunchout").css("display", "inline-block");
+                        $("#punchInBtn").css("display", "none");
+                    } else {
+                        alert('Failed to record Punch In time.');
+                    }
+                },
+                error: function () {
+                    alert('An error occurred while recording Punch In time.');
+                }
+            });
+        });
+
+        document.getElementById('btnbreak').addEventListener('click', function () {
+            stopTimer();
+            startBreakTimer();
+
+            var currentTime = document.getElementById('timer').innerText;
+
+            $.ajax({
+                method: 'POST',
+                url: '@Url.Action("TakeBreak", "Home")',
+                data: {},
+                success: function (response) {
+                    if (response.success) {
+                        // alert('Break time recorded successfully.');
+
+                        $("#btnbreak").css("display", "none");
+                        $("#btncontinue").css("display", "inline-block");
+                        $("#btnpunchout").css("display", "inline-block");
+
+                    } else {
+                        alert('Failed to record break time.');
+                    }
+                },
+                error: function () {
+                    alert('An error occurred while recording break time.');
+                }
+            });
+        });
+
+        document.getElementById('btncontinue').addEventListener('click', function () {
+            stopBreakTimer();
+            startTimer();
+            var currentTime = document.getElementById('timer').innerText;
+
+            $.ajax({
+                method: 'POST',
+                url: '@Url.Action("ContinueWork", "Home")',
+                data: {},
+                success: function (response) {
+                    if (response.success) {
+                        // alert('Work continued successfully.');
+
+
+                        $("#btncontinue").css("display", "none");
+                        $("#btnbreak").css("display", "inline-block");
+                        $("#btnpunchout").css("display", "inline-block");
+
+                    } else {
+                        alert('Failed to continue work.');
+                    }
+                },
+                error: function () {
+                    alert('An error occurred while continuing work.');
+                }
+            });
+        });
+
+
+
+        document.getElementById('btnpunchout').addEventListener('click', function () {
+            stopTimer();
+            stopBreakTimer();
+
+            var currentTime = document.getElementById('timer').innerText;
+
+            $.ajax({
+                method: 'POST',
+                url: '@Url.Action("PunchOut", "Home")',
+                data: {},
+                success: function (response) {
+                    if (response.success) {
+                        // alert('Punch out time recorded successfully.');
+
+                        $("#btncontinueworking").css("display", "inline-block");
+
+                        $("#btnbreak").css("display", "none");
+                        $("#btnpunchout").css("display", "none");
+                        $("#punchInBtn").css("display", "none");
+                        $("#btncontinue").css("display", "none");
+
+                    } else {
+                        alert('Failed to record Punch In time.');
+                    }
+                },
+                error: function () {
+                    alert('An error occurred while recording Punch In time.');
+                }
+            });
+        });
+
+
+        document.getElementById('btncontinueworking').addEventListener('click', function () {
+           
+          
+            var currentTime = document.getElementById('timer').innerText;
+
+            $.ajax({
+                method: 'POST',
+                url: '@Url.Action("ContinueWorkingHours", "Home")',
+                data: {},
+                success: function (response) {
+                    if (response.success) {
+                        // alert('Work continued successfully.');
+                        updateTimer();
+                        startTimer();
+                        $("#btncontinueworking").css("display", "none");
+
+                        $("#btnbreak").css("display", "inline-block");
+                        $("#btnpunchout").css("display", "inline-block");
+
+                        // $("#punchInBtn").css("display", "none");
+                        // $("#btncontinue").css("display", "none");
+
+
+                    } else {
+                        alert('Failed to continue working.');
+                    }
+                },
+                error: function () {
+                    alert('An error occurred while continuing work.');
+                }
+            });
+        });
+
+
+    </script>
+}
+
+
